@@ -14,7 +14,7 @@
 
 % The reason we need to do this is because homer2 cannot read .nirs files
 
-rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\re-org';
+rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\test2';
 
 % Get a list of all subdirectories in the root directory
 items = dir(rootDir);

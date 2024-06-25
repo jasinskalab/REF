@@ -26,6 +26,8 @@ function GT_visuals(A,fwMCFilePath, participantID, SSlist, Clustering, local_eff
         CoorOpt_reg = [CoorOpt_reg; mesh.vertices(index, :)];
     end
 
+    % Extract directory from fwMCFilePath
+    [saveDir, ~, ~] = fileparts(fwMCFilePath);
 %% Plot links and nodes on brain 
 
 % This will allow us to visualize our results 
@@ -88,11 +90,11 @@ set(gca,'CameraPosition',...
     'PlotBoxAspectRatio',[1 1.18303201283536 1.08555630447355]);
     
      % Define save path for the figure
-    figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test', ...
-                              participantID, sprintf('%s_linknodes_figure.fig', participantID));
-    saveas(gcf, figureSavePath);  % Save the figure
+   
+     figureSavePath = fullfile(saveDir, sprintf('%s_linknodes_figure.fig', participantID));
+     saveas(gcf, figureSavePath);  % Save the figure
 
-    % Plot clustering coefficient on the brain
+    %% Plot clustering coefficient on the brain
     figure();
     subplot(1, 3, 2);
     background_graph_Image;
@@ -118,10 +120,9 @@ set(gca,'CameraPosition',...
     end
 
     % Define save path for the clustering figure
-    figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test', ...
-                              participantID, sprintf('%s_clustering_figure.fig', participantID));
+    
+    figureSavePath = fullfile(saveDir, sprintf('%s_clustering_figure.fig', participantID));
     saveas(gcf, figureSavePath);  % Save the figure
-
     
     %% Plot local efficiency 
 
@@ -176,8 +177,8 @@ for N=1:size(CoorOpt_reg,1)
 end
 
     % Define save path for the clustering figure
-    figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test', ...
-                              participantID, sprintf('%s_localefficiency_figure.fig', participantID));
+    
+    figureSavePath = fullfile(saveDir, sprintf('%s_localefficiency_figure.fig', participantID));
     saveas(gcf, figureSavePath);  % Save the figure
 
     
