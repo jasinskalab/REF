@@ -1,4 +1,4 @@
-%% working functional connectivity pipeline --- 07/04/24
+%% working functional connectivity pipeline --- 20/06/24
 
 % Caution 
             % ensure homer2 is installed
@@ -18,7 +18,7 @@
 
 % The reason we need to do this is because homer2 cannot read .nirs files
 
-rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\re-org';
+rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\test2';
 
 % Get a list of all subdirectories in the root directory
 items = dir(rootDir);
@@ -307,7 +307,10 @@ matFiles = dir(fullfile(rootDir, '**', 'run', '*_RS.mat')); % Find all _RS.mat f
 
 for i = 1:length(matFiles)
     matFilePath = fullfile(matFiles(i).folder, matFiles(i).name); % Full path to the _RS.mat file
-    [pathStr, fileName, ~] = fileparts(matFilePath); % Extract participant name from file name and save to _RS
+    [~, fileName, ~] = fileparts(matFilePath); % Extract participant name from file name
+
+    % Extract the base participant ID without '_RS'
+    participantID = regexprep(fileName, '_RS$', ''); % Remove '_RS' at the end of the fileName
     
     % Load the _RS.mat file
     load(matFilePath); % Assuming the data variable names inside are consistent
@@ -657,6 +660,9 @@ correlation_table = splitvars(G.Edges)
  
   %% Export Results to CSV
     % Assuming 'correlation_table' is the result table you want to export
+    
+    [pathStr, ~, ~] = fileparts(matFilePath);
+    
     csvFileName = sprintf('%s_con.csv', fileName); % Name of the output CSV file
     csvFilePath = fullfile(pathStr, csvFileName); % Full path to the output CSV file
     
@@ -667,17 +673,40 @@ correlation_table = splitvars(G.Edges)
     
     % Print a message to indicate completion
     fprintf('Analysis and export completed for %s\n. File saved to: %s\n', fileName, csvFilePath);
- 
+
+    
+%% Image Reconstruction (Seed-Based Analysis) 
+
+% Load in forward model        
+        
+% the forward model is generated using homer2 atlasviwer, The forward model 
+% predicts the expected light transport through the head given certain 
+% properties of the tissue this model is based on the optical properties 
+% of the tissues (such as scattering and absorption coefficients) and 
+% the geometry of the head and the placement of fNIRS sensors and sources. 
+% The outputs of the forward model are typically light intensity or photon 
+% density distributions, which are used to infer the changes in oxygenated 
+% and deoxygenated hemoglobin concentrations from the measured light attenuations in the brain.
+
+
+% The fwMC file has a bunch of different variables, the only two we are
+% interested in are, Adot and mesh - Adot tells us the sensitivity matrix
+% and mesh refers to the volume in which the the photons are migrating - in
+% essence the space we capture, or in other wrods the structure of the head
+
+fwMCFilePath = fullfile(rootDir, subdirName, 'RS', 'run', strcat(subdirName, '_fwMC.mat'));
+
+% Now we will define our seed (as Roi) refer to your montage to select
+% your seed - i.e, channel.
+
+Roi = 31; % L-STG
+
+% Call the image reconstruction script
+
+SeedBased_visuals(participantID, fwMCFilePath, SSlist, CorrelationCoefficient, Roi)
+  
 
 end
 
-%% Image Reconstruction (Seed-Based Analysis) - work in progress
-
-% Ensure Forward Model for participant is loaded (create using AtlasViewer)
-
-%load fwMC.mat
-
-
-%% Graph theoretical network analysis - work in progress 
 
 
