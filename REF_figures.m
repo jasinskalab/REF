@@ -99,7 +99,7 @@ set(gca,'CameraPosition',...
     1.85583529548837,'DataAspectRatio',[1 1 1],'LineStyleOrderIndex',50,...
     'PlotBoxAspectRatio',[1 1.18303201283536 1.08555630447355]);
 
-participantID = 'REF_005'; % Define or fetch the participant ID dynamically if needed
+participantID = 'REF_005'; 
 figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test\REF_005\RS\run', sprintf('%s_linknodes_figure.fig', participantID));
 
 % Save the figure to the specified path
@@ -157,7 +157,7 @@ for N=1:size(CoorOpt_reg,1)
     end
 end
 
-participantID = 'REF_005'; % Define or fetch the participant ID dynamically if needed
+participantID = 'REF_005'; 
 figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test\REF_005\RS\run', sprintf('%s_clustering_figure.fig', participantID));
 
 % Save the figure to the specified path
@@ -217,7 +217,7 @@ for N=1:size(CoorOpt_reg,1)
 end
 
 
-participantID = 'REF_005'; % Define or fetch the participant ID dynamically if needed
+participantID = 'REF_005'; 
 figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test\REF_005\RS\run', sprintf('%s_localefficiency_figure.fig', participantID));
 
 % Save the figure to the specified path
@@ -301,7 +301,11 @@ for N=1:size(CoorOpt_reg,1)
     end
 end
 
+participantID = 'REF_005'; 
+figureSavePath = fullfile('C:\Users\Hashlu\Documents\MATLAB\REF\test\REF_005\RS\run', sprintf('%s_LSTG.fig', participantID));
 
+% Save the figure to the specified path
+saveas(gcf, figureSavePath);
 
 
 
