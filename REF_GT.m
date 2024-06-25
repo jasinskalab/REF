@@ -1,4 +1,4 @@
-%% Working graph theory analytical pipeline - 28/05/2024
+%% Working graph theory analytical pipeline - 25/06/2024
 
 %% Caution 
             % ensure homer2 is installed
@@ -14,7 +14,7 @@
 
 % The reason we need to do this is because homer2 cannot read .nirs files
 
-rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\test';
+rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\re-org';
 
 % Get a list of all subdirectories in the root directory
 items = dir(rootDir);
@@ -151,14 +151,17 @@ resultTable = table('Size', [0, 7], ...
     'VariableNames', {'participantID', 'mean_clustering', 'path_length', 'small_worldness', 'SWP', 'modularity', 'global_efficiency'});
 
 
+
 for i = 1:length(matFiles)
     matFilePath = fullfile(matFiles(i).folder, matFiles(i).name); % Full path to the _RS.mat file
-    [pathStr, fileName, ~] = fileparts(matFilePath); % Extract participant name from file name and save to _RS
+    [~, fileName, ~] = fileparts(matFilePath); % Extract participant name from file name
+
+    % Extract the base participant ID without '_RS'
+    participantID = regexprep(fileName, '_RS$', ''); % Remove '_RS' at the end of the fileName
     
     % Load the _RS.mat file
     load(matFilePath); % Assuming the data variable names inside are consistent
     
-
 %% List of short channels for the used probe :
      % go through SD.MeasList and locate the position of detectors & short channel
      % short channels = cell with detectors that exceed number of channels
@@ -462,50 +465,7 @@ dc_w = dc_w(Pmax+1:end,:,:);
      CorrelationCoefficient(exclude_channels,:,:) = 0;
      CorrelationCoefficient(:,exclude_channels,:) = 0; 
 
-
-
-
-%% Graph Theory : Load in fwMC
-
-% the forward model is generated using homer2 atlasviwer, The forward model 
-% predicts the expected light transport through the head given certain 
-% properties of the tissue this model is based on the optical properties 
-% of the tissues (such as scattering and absorption coefficients) and 
-% the geometry of the head and the placement of fNIRS sensors and sources. 
-% The outputs of the forward model are typically light intensity or photon 
-% density distributions, which are used to infer the changes in oxygenated 
-% and deoxygenated hemoglobin concentrations from the measured light attenuations in the brain.
-
-
-% The fwMC file has a bunch of different variables, the only two we are
-% interested in are, Adot and mesh - Adot tells us the sensitivity matrix
-% and mesh refers to the volume in which the the photons are migrating - in
-% essence the space we capture, or in other wrods the structure of the head
-
-% Define the path to the fwMC.mat file
-
-fwMCFilePath = fullfile(runFolderPath, [subdirName, '_fwMC.mat']);
-
-% Check if the fwMC file exists and load specific parts
-if exist(fwMCFilePath, 'file')
-    % Load only the 'fwmodel' structure from the fwMC file
-    
-    data = load(fwMCFilePath, 'fwmodel');
-
-      else
- fprintf('No fwMC file found at %s\n', fwMCFilePath);
-    end
-                
-% Check if 'fwmodel' contains 'Adot' and 'mesh'
-
-if isfield(data.fwmodel, 'Adot') && isfield(data.fwmodel, 'mesh')
-                    Adot = data.fwmodel.Adot;
-                    mesh = data.fwmodel.mesh;
-                    fprintf('Loaded Adot and mesh from %s\n', fwMCFilePath);
-
-           else
- fprintf('Adot or mesh not found in fwmodel at %s\n', fwMCFilePath);
-end           
+      
           
 %% Graph theory
 
@@ -521,7 +481,7 @@ threshold = 0.3;
 
 %% Graph theory : Preprocessing - Adjacency Matrix
 
-% An adjacency matrix provides us a compacy way to represetn the structure
+% An adjacency matrix provides us a compact way to represetn the structure
 % of anetwork. Each element of the matrix will indicate whether a pair of
 % nodes are connected
 
@@ -531,7 +491,7 @@ threshold = 0.3;
 % 1 - HbO, 2 - HbR, and 3 - HbT.  
 ChosenHb = 1;
 
-CorrMatrix = CorrelationCoefficient(:,:,1);
+CorrMatrix = CorrelationCoefficient(:,:,ChosenHb);
 
 A = CorrMatrix;
 
@@ -696,7 +656,7 @@ filtered_clustering_random = Clustering_random(valid_indices);
 mean_clustering = mean(filtered_clustering);
 mean_clustering_random = mean(filtered_clustering_random);
 
-% Compute gamma, lambda, small_wordlness
+% Compute gamma, lambda, small_wordlness (sigma)
 gamma = mean_clustering / mean_clustering_random;
 lambda = path_length / path_length_random;
 small_worldness = gamma / lambda;
@@ -705,17 +665,17 @@ small_worldness = gamma / lambda;
 
 % Small-world propensity is a relatively newer metric designed to assess the 
 % small-world characteristics of a network while addressing some limitations 
-% in the traditional \(\sigma\) metric, especially when used with brain networks 
+% in the traditional sigma metric, especially when used with brain networks 
 % or other complex structures. This metric is designed to be more robust against
 % variations in network size, density, and degree distribution, which can affect 
 % the comparability of the traditional small-worldness measure.
 
-% Calculate ?C: Normalized Clustering Coefficient Deviation
+% Calculate DeltaC: Normalized Clustering Coefficient Deviation
 delta_C = (mean_clustering - mean_clustering_random) / ...
           (max([Clustering; Clustering_random]) - mean_clustering_random);
 delta_C = max(0, min(delta_C, 1)); 
 
-% Calculate ?L: Normalized Path Length Deviation
+% Calculate DeltaL: Normalized Path Length Deviation
 delta_L = (path_length_random - path_length) / ...
           (path_length_random - min([path_length; path_length_random]));
 delta_L = max(0, min(delta_L, 1));  
@@ -755,14 +715,47 @@ A_m = A_m(indices, indices);
 
 % Calculate Modularity
 
-% Assuming gamma value is set or the default is used
 [Ci, Q] = modularity_und(A_m);
    
 modularity = Q;
 
- %% Save results into a temporary table
-% Ensure all variables have the same number of rows
-participantID = {string(fileName)}; % Convert fileName to a string
+
+%% Figures - Image Reconstruction
+
+% Load in forward model        
+        
+% the forward model is generated using homer2 atlasviwer, The forward model 
+% predicts the expected light transport through the head given certain 
+% properties of the tissue this model is based on the optical properties 
+% of the tissues (such as scattering and absorption coefficients) and 
+% the geometry of the head and the placement of fNIRS sensors and sources. 
+% The outputs of the forward model are typically light intensity or photon 
+% density distributions, which are used to infer the changes in oxygenated 
+% and deoxygenated hemoglobin concentrations from the measured light attenuations in the brain.
+
+
+% The fwMC file has a bunch of different variables, the only two we are
+% interested in are, Adot and mesh - Adot tells us the sensitivity matrix
+% and mesh refers to the volume in which the the photons are migrating - in
+% essence the space we capture, or in other wrods the structure of the head
+
+ fwMCFilePath = fullfile(rootDir, subdirName, 'RS', 'run', strcat(subdirName, '_fwMC.mat'));
+
+% Image reconstruction 
+    GT_visuals(A, fwMCFilePath, participantID, SSlist, Clustering, local_efficiency);
+
+
+%% Save results into a temporary table
+
+
+% Ensure all variables are appropriate for insertion into a table
+        participantID = string(participantID); 
+        mean_clustering = double(mean_clustering);  
+        path_length = double(path_length);  
+        small_worldness = double(small_worldness);  
+        SWP = double(SWP); 
+        modularity = double(modularity); 
+        global_efficiency = double(global_efficiency); 
 
 % Create a temporary table for this iteration's data
 tempTable = table(participantID, mean_clustering, path_length, small_worldness, SWP, modularity, global_efficiency, ...
@@ -771,94 +764,11 @@ tempTable = table(participantID, mean_clustering, path_length, small_worldness, 
 % Append the temporary table to the results table
 resultTable = [resultTable; tempTable];
 
- clear filtered_dc
-
+    clear filtered_dc SWP small_worldness
 end
 
 % Export resultsTable to CSV
 
-writetable(resultTable, 'GT_results.csv');
-
-
-%% Graph Theory : Plot correlation and adjacency matrix
-
-% Input:
-%   CorrMatrix: Correlation Matrix
-%   A: Adjacency Matrix (binary and unweighted)
-
-% Plot Correlation and Adjacency Matrices for HbT
-figure('Renderer', 'painters', 'Position', [50 100 900 300]);
-subplot_1 = subplot(1,2,1);
-imagesc(CorrelationCoefficient,[-1 1]);
-colormap(subplot_1,jet);
-title('Correlation Matrix: HbT');
-
-
-subplot_2 = subplot(1,2,2);
-imagesc(A,[0 1]);
-colormap(subplot_2,gray)
-title('Adjacency Matrix');
-
-
-
-%% Graph Theory : Plot links and nodes using fwMC 
-
-% Take coordinates based on fwMC
-CoorOpt_reg = [];
-problematic_channels = [];  % To record channels with issues
-for nchn = 1:54
-    [maxValue, index] = max(Adot(nchn,:));
-    
-    if index > size(mesh.vertices, 1)
-        fprintf('Channel %d: Index %d exceeds vertex count with max value %.4f\n', nchn, index, maxValue);
-        problematic_channels = [problematic_channels; nchn, index, maxValue];  % Log problematic channel
-        continue;  % Skip to the next iteration to avoid errors
-    end
-    
-    CoorOpt_reg = [CoorOpt_reg; mesh.vertices(index, :)];
-end
-
-% Display problematic channels if any
-if ~isempty(problematic_channels)
-    disp('Problematic Channels Details:');
-    disp(array2table(problematic_channels, 'VariableNames', {'Channel', 'Index', 'MaxValue'}));
-end
-
-%CoorOpt_reg = [];
-%for nchn = 1:54
- %   [~, index] = max(Adot(nchn, :));
-  %  index = min(index, size(mesh.vertices, 1));  
-   % CoorOpt_reg = [CoorOpt_reg; mesh.vertices(index, :)];
-%end
-
-figure()
-subplot(1,3,3)
-background_graph_Image_fnirs_course;
-hold on;
-draw_links_in_the_brain(A,CoorOpt_reg,SSlist);
-
-set(gca,'CameraPosition',...
-    [4465.88633611231 -122.094067886442 1263.15589092293],'CameraTarget',...
-    [129.6960774264 138.177489128 141.54136287528],'CameraUpVector',...
-    [-0.228800956760502 0.24649272775698 0.941749147782148],'CameraViewAngle',...
-    1.85583529548837,'DataAspectRatio',[1 1 1],'LineStyleOrderIndex',50,...
-    'PlotBoxAspectRatio',[1 1.18303201283536 1.08555630447355]);
-
-subplot(1,3,2)
-background_graph_Image_fnirs_course;
-hold on;
-draw_links_in_the_brain(A,CoorOpt_reg,SSlist);
-
-subplot(1,3,1)
-background_graph_Image_fnirs_course;
-hold on;
-draw_links_in_the_brain(A,CoorOpt_reg,SSlist);
-set(gca,'CameraPosition',...
-    [-4293.28582052796 792.180042497397 512.780077175186],'CameraTarget',...
-    [129.6960774264 138.177489128 141.54136287528],'CameraUpVector',...
-    [0.116422989695643 0.240336181114654 0.963682628004444],'CameraViewAngle',...
-    1.85583529548837,'DataAspectRatio',[1 1 1],'LineStyleOrderIndex',50,...
-    'PlotBoxAspectRatio',[1 1.18303201283536 1.08555630447355]);
-
+writetable(resultTable, 'GT_results_test.csv');
 
 

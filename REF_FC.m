@@ -1,4 +1,4 @@
-%% working functional connectivity pipeline --- 26/03/24
+%% working functional connectivity pipeline --- 07/04/24
 
 % Caution 
             % ensure homer2 is installed
@@ -18,7 +18,7 @@
 
 % The reason we need to do this is because homer2 cannot read .nirs files
 
-rootDir = 'Z:\Data\REF\Hassan_REF\re_org';
+rootDir = 'C:\Users\Hashlu\Documents\MATLAB\REF\re-org';
 
 % Get a list of all subdirectories in the root directory
 items = dir(rootDir);
@@ -654,7 +654,7 @@ G = graph(z_score(:,:,1))
 %Write G.Edges to table and split the nested table to 3 separate columns 
 
 correlation_table = splitvars(G.Edges)
-
+ 
   %% Export Results to CSV
     % Assuming 'correlation_table' is the result table you want to export
     csvFileName = sprintf('%s_con.csv', fileName); % Name of the output CSV file
@@ -670,20 +670,6 @@ correlation_table = splitvars(G.Edges)
  
 
 end
-
-
-
-% path to participant directory - "Z:\Data\REF\Hassan_REF\re-org_rs\REF_00X"
-
-%save_table = "Z:\Data\REF\Hassan_REF\re-org_rs\REF_009"
-
-% Identify file name and format - "Z:\Data\REF\Hassan_REF\re-org_rs\REF_00X\REF_00X_con.csv"
-
-%table_path_format = "Z:\Data\REF\Hassan_REF\re-org_rs\REF_009\REF_009_con.csv"
-
-% Write and save table to path
-
-%writetable(correlation_table, table_path_format)
 
 %% Image Reconstruction (Seed-Based Analysis) - work in progress
 
